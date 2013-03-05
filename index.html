@@ -1,0 +1,72 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<script src="js/jquery-1.7.2.min.js"></script>
+	<script src="map.js"></script>
+	<script>
+$(function() {
+	window.map = new Map();
+
+	var canvas=$("#screen")[0];
+	var resize = function() {
+		canvas.width = window.innerWidth-20;
+		canvas.height = window.innerHeight-20;
+		window.map.draw(canvas);
+	}
+	$(window).resize(resize);
+	resize();
+	var draw = function() {
+		window.map.draw(canvas);
+	}
+	map.load({ 
+		tilesUrl: "img/tileset_02_03.png", 
+		mapUrl: "save/firstmap.txt", 
+		things: [
+			{
+				name: "player",
+				density: 48,
+				url: "img/character.png",
+				frameWidth: 34,
+				renderWidth: 34,
+				framesX: 4, 
+				framesY: 4
+			},
+			{
+				name: "bomb",
+				density: 48, 
+				url: "img/bomb_64x64_2.png", 
+				frameWidth: 64, 
+				renderWidth: 32, 
+				framesX: 1, 
+				framesY: 1,
+				rndSize: true
+			},
+			{
+				name: "item",
+				density: 64, 
+				url: "img/items.png",  
+				frameWidth: 32, 
+				renderWidth: 32, 
+				framesX: 3, 
+				framesY: 4,
+				prob: [1, 1, 0, 
+					1, 1, 1, 
+					1, 1, 1,
+					1, 1, 1,
+					1, 0, 0,
+					1, 1, 1,
+					1, 0, 0]
+			}
+		],
+		callback: draw,
+		zoom: 32,
+		widthPx: window.innerWidth,
+		heightPx: window.innerHeight
+	});
+});
+	</script>
+</head>
+<body>
+<canvas id="screen" border="0"></canvas>
+</body>
+</html>
