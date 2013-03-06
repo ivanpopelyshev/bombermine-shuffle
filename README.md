@@ -13,7 +13,12 @@ Modify images and index.html. Refresh the page.
 ## Hints
 
 ```javascript
-{[
+{	tilesUrl: "img/tileset_02_03.png",
+	//shuffle takes random rectangle from that map
+	mapUrl: "save/firstmap.bin",
+	//32 pixels per tile
+	zoom: 32,
+	things: [
 	{
 		name: "item", 
 		// one sprite per 64 tiles
@@ -35,11 +40,8 @@ Modify images and index.html. Refresh the page.
 			1, 0, 0,
 			1, 1, 1,
 			1, 0, 0]
-		}
 	}
-],
-//32 pixels per tile
-zoom: 32 
+	]
 }
 ```
 
