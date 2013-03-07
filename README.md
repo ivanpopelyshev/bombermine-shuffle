@@ -33,10 +33,13 @@ Modify images and index.html. Refresh the page.
 			framesX: 4, 
 			//four animations
 			framesY: 4,
-			//animation parameters. animSpeed x speed = 30 * 2.5 = one frame per 75ms.
-			animSpeed: 30,
-			//tiles per 100ms, 2.5 = low speed, 3.75 = high speed, 4.375 = NYAN!
-			speed: 2.5,
+			//animation parameters, animSpeed / speed ms per one cycle
+			//default 1200 / 4 = 300ms per one cycle
+			animSpeed: 1200,
+			//speed/16 tiles per 100ms
+			//default value is 4, it means 2.5 tiles per second 
+			//max value is 6, NYAN value is 7
+			speed: 4,
 			//UP, RIGHT, LEFT, DOWN
 			row: [0, 1, 2, 3]
 		},
