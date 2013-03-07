@@ -2,7 +2,7 @@ bombermine-shuffle
 ==================
 
 ## [Demo](http://ivanpopelyshev.github.com/bombermine-shuffle/index.html) 
-Ñlick on a character, move it with keyboard.
+Click on a character, move it with keyboard.
 
 ## First step
 Copy files to your web-server or start google chrome with "--allow-file-access-from-files" argument.
