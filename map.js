@@ -9,6 +9,9 @@
 		this.map = [];
 		this.dataString;
 		this.zoom = 32;
+		this.bufWidth = 0;
+		this.bufHeight = 0;
+		this.selected = null;
 	}
 	
 	Map.prototype.load = function(params) {
@@ -49,8 +52,35 @@
 		});
 	}
 	
-	Map.prototype.draw = function(canvas) {
-		if (this.width==0) return;
+	Map.prototype.drawCeiling = function(canvas) {
+	var FLOOR = 0, BUILDING = 1, ARROW = 2, ABYSS = 3, TUNNEL = 4, SOLID = 5, BOX = 6;
+		var tW = 32;
+		var tH = 40;
+		var zoom = this.zoom;
+		var fX = this.tileImage.width/tW;
+		var context = canvas.getContext("2d");
+		var W = Math.min(this.width, (canvas.width/zoom+2) | 0), 
+		    H = Math.min(this.height, (canvas.height/zoom+2) | 0);
+		context.save();
+		context.scale(zoom, zoom);
+		context.translate(0, -1.0);
+		var t = 0.125;
+		//LAYER #3 (ceiling): -t;
+		for (var j=0; j<H; j++) {
+			for (var i=0; i<W; i++) {
+				var tile = this.tiles[this.map[j][i]];
+				var type = tile.type;
+				if (type!=ABYSS && type!=FLOOR && type!=ARROW) {
+					var s = -t;
+					if (type==BUILDING || type==BOX) s = 0;
+					context.drawImage(this.tileImage, tW * (tile.image%fX), tH * (tile.image/fX | 0), tW, tW, i, j+s, 1, 1); 
+				}
+			}
+		}
+		context.restore();
+	}
+	
+	Map.prototype.drawFloor = function(canvas) {
 		var FLOOR = 0, BUILDING = 1, ARROW = 2, ABYSS = 3, TUNNEL = 4, SOLID = 5, BOX = 6;
 		var tW = 32;
 		var tH = 40;
@@ -123,6 +153,19 @@
 				}
 			}
 		}
+		context.restore();
+	}
+	
+	Map.prototype.drawObjects = function(canvas) {
+		var zoom = this.zoom;
+		var context = canvas.getContext("2d");
+		var W = Math.min(this.width, (canvas.width/zoom+2) | 0), 
+		    H = Math.min(this.height, (canvas.height/zoom+2) | 0);
+		context.save();
+		context.scale(zoom, zoom);
+		context.translate(0, -1.0);
+		var now = Date.now()%100000;
+		if (now<0) now+=100000;
 		//LAYER #2 OBJECTS: 0
 		for (var j=0; j<H; j++)
 			for (var i=0; i<W; i++) {
@@ -132,20 +175,57 @@
 					context.drawImage(p.type.image, p.sx*sW, p.sy*sW, sW, sW, p.dx+0.5 - dW/2, p.dy+0.5 -dW/2, dW, dW);
 				}
 			}
-		
-		//LAYER #3 (ceiling): -t;
-		for (var j=0; j<H; j++) {
-			for (var i=0; i<W; i++) {
-				var tile = this.tiles[this.map[j][i]];
-				var type = tile.type;
-				if (type!=ABYSS && type!=FLOOR && type!=ARROW) {
-					var s = -t;
-					if (type==BUILDING || type==BOX) s = 0;
-					context.drawImage(this.tileImage, tW * (tile.image%fX), tH * (tile.image/fX | 0), tW, tW, i, j+s, 1, 1); 
-				}
-			}
+		context.restore();
+	}
+	
+	Map.prototype.drawSelected = function(canvas) {
+		var zoom = this.zoom;
+		var context = canvas.getContext("2d");
+		context.save();
+		context.scale(zoom, zoom);
+		context.translate(0, -1.0);
+		if (this.selected != null) {
+			var p = this.selected;
+			context.strokeStyle = "lime";
+			context.lineWidth = 0.05;
+			context.strokeRect(p.dx - 0.5, p.dy - 0.5, 2, 2);
 		}
 		context.restore();
+	}
+	
+	Map.prototype.selectAt = function(x, y) {
+		x/=this.zoom;
+		y/=this.zoom;
+		y+=1.0;
+		x|=0;
+		y|=0;
+		if (x>=0 && y>=0 && x<this.width && y<this.height)
+			this.selected = this.obj[y][x];
+		else this.selected = null;
+	}
+	
+	Map.prototype.draw = function(canvas) {	
+		if (this.width==0) return;
+		var context = canvas.getContext("2d");
+		if (this.bufWidth != canvas.width || this.bufHeight != canvas.height) {
+			if (this.bufFloor === undefined) {
+				this.bufFloor = document.createElement("canvas");
+				this.bufCeiling = document.createElement("canvas");
+			}
+			this.bufWidth = canvas.width;
+			this.bufHeight = canvas.height;
+			this.bufFloor.width = canvas.width;
+			this.bufFloor.height = canvas.height;
+			this.drawFloor(this.bufFloor);
+			this.bufCeiling.width = canvas.width;
+			this.bufCeiling.height = canvas.height;
+			this.drawCeiling(this.bufCeiling);
+		}
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		context.drawImage(this.bufFloor, 0, 0);
+		this.drawObjects(canvas);
+		context.drawImage(this.bufCeiling, 0, 0);
+		this.drawSelected(canvas);
 	}
 	
 	Map.prototype.randomize = function() {
