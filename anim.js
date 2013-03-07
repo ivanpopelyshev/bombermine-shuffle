@@ -24,9 +24,9 @@ window.init = function() {
 			if (map.selected==null || !map.selected.type.animSpeed) return;
 			var p = map.selected;
 			p.step = p.step || 0;
-			p.step += tick;
+			p.step += p.type.speed * tick / p.type.animSpeed;
 			map.obj[p.dy+0.5|0][p.dx+0.5|0] = null;
-			var d = p.type.speed * tick/1000.0;
+			var d = p.type.speed/16 * tick/100;
 			if (keyUp) {
 				p.sy = p.type.row[0];
 				p.dy = Math.max(0, p.dy-d);
@@ -48,7 +48,7 @@ window.init = function() {
 				p.step = 0;
 				redraw = false;
 			} else {
-				p.sx = (p.step/p.type.animSpeed | 0) % p.type.framesX;
+				p.sx = (p.step * p.type.framesX | 0) % p.type.framesX;
 				redraw = true;
 			}
 			map.obj[p.dy+0.5|0][p.dx+0.5|0] = p;
