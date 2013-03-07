@@ -3,25 +3,18 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 	<script src="js/jquery-1.7.2.min.js"></script>
 	<script src="map.js"></script>
+	<script src="anim.js"></script>
 	<script>
 $(function() {
-	window.map = new Map();
-
-	var canvas=$("#screen")[0];
-	var resize = function() {
-		canvas.width = window.innerWidth-20;
-		canvas.height = window.innerHeight-20;
-		window.map.draw(canvas);
-	}
-	$(window).resize(resize);
-	resize();
-	var draw = function() {
-		window.map.draw(canvas);
-	}
+	init();
 	map.load({ 
 		tilesUrl: "img/tileset_02_03.png", 
-		mapUrl: "save/firstmap.bin", 
-		things: [
+		mapUrl: "save/firstmap.bin",
+		callback: setupAnim,
+		zoom: 32,
+		widthPx: window.innerWidth,
+		heightPx: window.innerHeight,
+		things:[
 			{
 				name: "player",
 				density: 24,
@@ -29,7 +22,13 @@ $(function() {
 				frameWidth: 34,
 				renderWidth: 34,
 				framesX: 4, 
-				framesY: 4
+				framesY: 4,
+				//animation parameters. animSpeed x speed = 30 * 2.5 = one frame per 75ms.
+				animSpeed: 30,
+				//2.5 = low speed, 3.75 = high speed, 4.375 = NYAN!
+				speed: 2.5,
+				//UP, RIGHT, LEFT, DOWN
+				row: [0, 1, 2, 3]
 			},
 			{
 				name: "bomb",
@@ -57,11 +56,7 @@ $(function() {
 					1, 1, 1,
 					1, 0, 0]
 			}
-		],
-		callback: draw,
-		zoom: 32,
-		widthPx: window.innerWidth,
-		heightPx: window.innerHeight
+		]
 	});
 });
 	</script>
