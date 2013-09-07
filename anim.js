@@ -42,11 +42,7 @@ window.init = function() {
 				p.sy = p.type.row[1];
 				p.dx = Math.min(canvas.width/map.zoom, p.dx+d);
 			}
-			//if (keySpace) {
-				// nothing
-				//p.sx = (p.step * p.type.framesX | 0) % p.type.framesX;
-				//redraw = true;
-			//}
+
 			if (!keyUp && !keyDown && !keyLeft && !keyRight && !keySpace && !keyEnter) {
 				p.dx = (p.dx * map.zoom | 0) / map.zoom
 				p.dy = (p.dy * map.zoom | 0) / map.zoom
@@ -56,6 +52,8 @@ window.init = function() {
 			} else {
 				var oldsx = p.sx;
 				p.sx = (p.step * p.type.framesX | 0) % p.type.framesX;
+				if(p.type.animStand && p.sx!==oldsx && oldsx>0)
+					p.sx++;
 				if(keyEnter && p.sx==0 && oldsx!==0)
 					keyEnter = false;
 				redraw = true;
