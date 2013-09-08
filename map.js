@@ -171,8 +171,18 @@
 			for (var i=0; i<W; i++) {
 				var p = this.obj[j][i];
 				if (p) {
+					//var sW = p.type.frameWidth, dW = p.type.renderWidth / 32 * p.size;
+					//context.drawImage(p.type.image, p.sx*sW, p.sy*sW, sW, sW, p.dx+0.5 - dW/2, p.dy+0.5 -dW/2, dW, dW);
+					
+					var frameHeight = p.type.frameHeight ? p.type.frameHeight : p.type.frameWidth;
 					var sW = p.type.frameWidth, dW = p.type.renderWidth / 32 * p.size;
-					context.drawImage(p.type.image, p.sx*sW, p.sy*sW, sW, sW, p.dx+0.5 - dW/2, p.dy+0.5 -dW/2, dW, dW);
+					var renderHeight = p.type.renderWidth * frameHeight / p.type.frameWidth;
+					var sH = frameHeight, dH = renderHeight / 32 * p.size;
+					context.drawImage(p.type.image, 
+						p.sx*sW, p.sy*sH, // skin coord
+						sW, sH, // skin crop
+						p.dx+0.5 - dW/2, p.dy+0.5 -dH/2, // screen coord
+						dW, dH); // screeen size
 				}
 			}
 		context.restore();
