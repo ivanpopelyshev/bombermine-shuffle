@@ -16,11 +16,12 @@ window.init = function() {
 			map.selectAt(x,y);
 			window.map.draw(canvas);
 		});
-		var keyUp = false, keyDown = false, keyLeft = false, keyRight = false, redraw = false;
+		var keyUp = false, keyDown = false, keyLeft = false, keyRight = false, 
+			keySpace = false, keyEnter = false, redraw = false;
 		
 		var tick = 1000/60;
 		setInterval(function() {
-			if (!keyUp && !keyDown && !keyLeft && !keyRight && !redraw) return;
+			if (!keyUp && !keyDown && !keyLeft && !keyRight && !keySpace && !keyEnter && !redraw) return;
 			if (map.selected==null || !map.selected.type.animSpeed) return;
 			var p = map.selected;
 			p.step = p.step || 0;
@@ -41,14 +42,20 @@ window.init = function() {
 				p.sy = p.type.row[1];
 				p.dx = Math.min(canvas.width/map.zoom, p.dx+d);
 			}
-			if (!keyUp && !keyDown && !keyLeft && !keyRight) {
+
+			if (!keyUp && !keyDown && !keyLeft && !keyRight && !keySpace && !keyEnter) {
 				p.dx = (p.dx * map.zoom | 0) / map.zoom
 				p.dy = (p.dy * map.zoom | 0) / map.zoom
 				p.sx = 0;
 				p.step = 0;
 				redraw = false;
 			} else {
+				var oldsx = p.sx;
 				p.sx = (p.step * p.type.framesX | 0) % p.type.framesX;
+				if(p.type.animStand && p.sx!==oldsx && oldsx>0)
+					p.sx++;
+				if(keyEnter && p.sx==0 && oldsx!==0)
+					keyEnter = false;
 				redraw = true;
 			}
 			map.obj[p.dy+0.5|0][p.dx+0.5|0] = p;
@@ -72,6 +79,12 @@ window.init = function() {
 				case 83:
 					keyDown = true;
 					break;
+				case 13:
+					keyEnter = true;
+					break;						
+				case 32:
+					keySpace = true;
+					break;						
 			}
 		});
 		$(document).keyup(function(event){
@@ -92,6 +105,12 @@ window.init = function() {
 				case 83:
 					keyDown = false;
 					break;
+				case 13:
+					//keyEnter = false;
+					break;						
+				case 32:
+					keySpace = false;
+					break;					
 			}
 		});
 	}

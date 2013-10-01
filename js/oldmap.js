@@ -252,15 +252,46 @@
 		}
 		var version = data[pos++];
 		pos+=3;
+		
+		function read16() {
+			var x = data[pos++];
+			x += data[pos++] << 8;
+			if (x>=32768)
+				x-=65536;
+			return x;
+		}
+		
+		function readString() {
+			var len = read16();
+			var s = "";
+			for (var i=0;i<len;i++)
+				s+=String.fromCharCode(data[pos++]);
+			return s;
+		}
+		
 		var tilesCount = data[pos++];
 		while (tilesCount-->0) {
-			var tile = {type : data[pos++], image: data[pos++], background: data[pos++] }
+			var tile = {
+				id: read16(),
+				name: readString(),
+				group: read16(),
+				indexInGroup: read16(),
+				type : read16(),
+				direction : read16(),
+				buildValue : read16(),
+				level : read16(),
+				hide : read16(),
+				deep : read16(),
+				floor : read16(),
+				ceiling : read16()
+			}
 			this.tiles.push(tile);
 		}
-		var W = data[pos++];
-		W += data[pos++]<<8;
-		var H = data[pos++];
-		H += data[pos++]<<8;
+		
+				
+		console.log(this.tiles);
+		var W = read16();
+		var H = read16();
 		this.width = Math.min(this.screenWidth*2 | 0, W);
 		this.height = Math.min(this.screenHeight*2 | 0, H);
 		console.log(this.width+" "+this.height);
@@ -279,6 +310,21 @@
 			this.map.push(a);
 			this.obj.push(b);
 		}
+		
+		var allMap = [];
+		for (var j=0;j<H; j++){
+			var a = [];
+			for (var i=0;i<W; i++){
+				a.push(data[pos++]);
+			}
+			allMap.push(a);
+		}
+		
+		var tileNames = [];
+		for (var i=0;i<this.tiles.length; i++)
+			tileNames.push(this.tiles[i].name);
+		var mapJson = { tiles: tileNames, field: allMap};
+		console.log(JSON.stringify(mapJson));
 		
 		for (var j=0; j<this.things.length; j++) {
 			var type = this.things[j];
