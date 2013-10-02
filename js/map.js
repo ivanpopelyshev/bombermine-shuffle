@@ -26,7 +26,7 @@
 	var W2 = CHUNK_SIZE + 2;
 	
 	var Map = function(w, h, def) {
-		if (def){
+		if (typeof def !== "undefined"){
 			this.width = w;
 			this.height = h;
 			this.field = createTwoDimArray(w, h, def);

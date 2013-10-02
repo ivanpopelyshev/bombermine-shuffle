@@ -68,9 +68,8 @@ var app = {
 	
 	mapName: "default",
 	
-	newMap: function() {
-		this.map = new Map(72, 72, this.conf.defaultTile.id);
-		var game = this.game = new Game(this.map, this.conf);
+	newMap: function(rand) {
+		this.setup(new Map(72, 72, this.conf.defaultTile.id), rand);
 	},
 	
 	reset: function(rand) {
