@@ -6,15 +6,14 @@ app.addAssets({
 	frameWidth: 32,
 	frameHeight: 32,
 	rows: [
-		["", "grass", "", "", "abyss", "", "", "sand", ""],
-		["", "", "", "", "", "", "", "", ""],
-		["", "dirt", "", "", "", "", "", "", ""],
-		["", "", "", "", "", "", "", "", ""],
-		["grass1", "grass2", "grass3", "field", "hole1", "hole2", "hole3", "hole4"],
+		["grass", "", "abyss", "", "sand"],
+		[],
+		[],
+		["dirt", "grass2", "grass3", "field", "hole1", "hole2", "hole3", "hole4"],
 		["rocky", "rocky_hole", "dirty", "dirty_hole", "bridge_h", "bridge_v", "bridge_metal_v", "bridge_metal_h"],
-		["tile1", "tile2", "tile3", "tile4", "left", "up", "right", "down"],
+		["tile", "tile2", "tile3", "tile4", "left", "up", "right", "down"],
 		["button_off", "button_on", "bridge_off", "bridge_on", "tile_blue", "tile_red", "tile_yellow", "tile_purple"],
-		["deep_default", "deep_bridge", "", "sand1", "sand2", "well"],
+		["deep_default", "deep_bridge", "", "", "", "well"],
 		["rock3-plain", "rock3", "rock2-plain", "rock2", "rock1-plain", "rock1", "rock0-plain", "rock0"],
 		["chest_in_rock-plain", "chest_in_rock", "silver2-plain", "silver2", "silver1-plain", "silver1", "silver0-plain", "silver0"],
 		["tough9", "tough6", "gold2-plain", "gold2", "gold1-plain", "gold1", "gold0-plain", "gold0"],
@@ -31,26 +30,35 @@ app.addAssets({
 var conf = app.conf, 
 	newTile = conf.newTile.bind(conf), 
 	newGroup = conf.newGroup.bind(conf), 
+	newSurface = conf.newSurface.bind(conf), 
+	newDeep = conf.newDeep.bind(conf), 
+	getDeep = conf.getDeep.bind(conf), 
+	getSurface = conf.getSurface.bind(conf), 
 	sub = conf.newTile.bind(conf),
 	getTile = conf.getTile.bind(conf);
 
-conf.setDefaultTile(getTile("grass"))
-conf.setDefaultSurface(getTile("dirt"))
-conf.setDefaultDeepTile(getTile("deep_default"))
+conf.setDefaultTile(newTile("nothing"))
 
-newTile("grass", { type: "surface" })
-newTile("abyss", { type: "surface", bottomLess: true })
-newTile("sand", { type: "surface" })
-newTile("dirt", { type: "surface" })
+conf.setDefaultDeep(newDeep("deep_default"))
+newDeep("deep_bridge");
 
-newGroup("deep", {
-	bottomLess: true,
-    type: "deep",
+newSurface("grass")
+newSurface("abyss", {type: 1})
+newSurface("sand")
+newSurface("tile", {type: 2})
+conf.setDefaultSurface(newSurface("dirt"));
+
+newGroup("basic", {
+	type: "floor",
     subTiles: [
-        sub("deep_default"),
-        sub("deep_bridge")
+        sub("grass1", { surface: "grass" }),
+        sub("sand1", { surface: "sand" }),
+		sub("dirt1", { surface: "dirt" }),
+		sub("tile1", { surface: "tile" }),
     ]
 })
+
+newTile("abyss1", { surface: "abyss", type: "abyss", bottomLess: true });
 
 newGroup("boxes", {
 	type: "box",
@@ -84,7 +92,7 @@ newGroup("jumppad", {
 newGroup("bridge", {
     type: "floor",
 	surface: "abyss",
-    deep: getTile("deep_bridge"),
+    deep: getDeep("deep_bridge"),
     subTiles: [
         sub("bridge_h"),
         sub("bridge_v")
@@ -93,7 +101,7 @@ newGroup("bridge", {
 newGroup("bridge_metal", {
     type: "floor",
 	surface: "abyss",
-    deep: getTile("deep_bridge"),
+    deep: getDeep("deep_bridge"),
     subTiles: [
         sub("bridge_metal_v"),
         sub("bridge_metal_h")
@@ -102,7 +110,6 @@ newGroup("bridge_metal", {
 newGroup("tile", {
     type: "floor",
     subTiles: [
-        sub("tile1"),
         sub("tile2"),
         sub("tile3"),
         sub("tile4")
@@ -110,7 +117,7 @@ newGroup("tile", {
 })
 newGroup("arrow", {
     type: "arrow",
-    deep: getTile("deep_bridge"),
+    deep: getDeep("deep_bridge"),
     subTiles: [
         sub("left"),
         sub("up"),

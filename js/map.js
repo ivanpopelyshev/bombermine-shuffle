@@ -37,12 +37,22 @@
 			this.field = createTwoDimArray(this.width, this.height, 0);
 			for (var j=0;j<this.height;j++)
 				for (var i=0;i<this.width;i++) {
-					var tileName = json.tiles[json.field[j][i]];
+					var tileName = json.tiles[json.field[j][i] & 0xff];
 					var tile = conf.tileByName[tileName];
 					if (!tile)
 						this.field[j][i] = conf.defaultTile.id;
 					else
 						this.field[j][i] = tile.id;
+							
+					if (json.surface) {
+						tileName = json.surface[(json.field[j][i] >> 8) &0xff];
+						var tile = conf.tileByName[tileName];
+						if (!tile)
+							this.field[j][i] |= conf.defaultSurface.id << 8;
+						else
+							this.field[j][i] |= tile.id << 8;
+					} else 
+						this.field[j][i] |= conf.defaultSurface.id << 8;
 				}
 		}
 		this.init();
@@ -87,9 +97,25 @@
 					this.chunks[y1][x1].touch();
 				}
 		},
+		setTile: function(x, y, value) {
+			if (x<0 || y<0 || x>=this.width || y>=this.height) return;
+			this.set(x, y, (this.field[y][x] & ~0xff) | value);
+		},
+		setSurface: function(x, y, value) {
+			if (x<0 || y<0 || x>=this.width || y>=this.height) return;
+			this.set(x, y, (this.field[y][x] & ~0xff00) | (value<<8));
+		},
 		get: function(x, y) {
 			if (x<0 || y<0 || x>=this.width || y>=this.height) return 0;
 			return this.field[y][x];
+		},
+		getTile: function(x, y) {
+			if (x<0 || y<0 || x>=this.width || y>=this.height) return 0;
+			return this.field[y][x] & 0xff;
+		},
+		getSurface: function(x, y) {
+			if (x<0 || y<0 || x>=this.width || y>=this.height) return 0;
+			return (this.field[y][x]>>8) & 0xff;
 		},
 		getChunk: function(chunkX, chunkY) {
 			if (chunkX<0 || chunkY<0 || chunkX>=this.cWidth || chunkY>=this.cHeight) return 0;
@@ -99,6 +125,7 @@
 
 	var Chunk = function(map, x, y) {
 		this.mem = createOneDimArray(W2*W2);
+		this.memSurface = createOneDimArray(W2*W2);
 		this.map = map;
 		this.x = x;
 		this.y = y;
@@ -113,7 +140,7 @@
 		x: 0,
 		y: 0,
 		dirty: 3, //0 - not dirty, 1 - unknown, 2 - dirty, 3 - VERY DIRTY
-		copyFromField : function() {
+		copyFromField : function(helper) {
 			var map = this.map;
 			var field = map.field, w = map.width, h = map.height;
 			var k = 0;
@@ -121,11 +148,12 @@
 				for (var i=-1;i<=CHUNK_SIZE; i++) {
 					var x1 = ((this.x+i)% w + w )%w;
 					var y1 = ((this.y+j)% h + h )%h;
-					this.mem[k++] = field[y1][x1];
+					this.mem[k] = field[y1][x1];
+					this.memSurface[k++] = helper.getSurfaceByTile(field[y1][x1]);
 				}
 		},
 		calcChanges: function(helper) {
-			this.copyFromField();
+			this.copyFromField(helper);
 			var k = 0;
 			var changes = this.changes;
 			while (changes.length)
@@ -142,7 +170,7 @@
 							changes.push(k);
 						}
 					}
-					v = helper.getTileNumberSurface(this.mem, k2 - W2, k2, k2 + W2);
+					v = helper.getSurfaceNumber(this.memSurface, k2 - W2, k2, k2 + W2);
 					if (v!=this.visual2[k]) {
 						this.visual2[k] = v;
 						if (changes.length<10 && mod==0) 
@@ -182,9 +210,11 @@
 			this.obj[y][x] = null;
 		},
 		asJSON: function() {
-			var res = {tiles:[], field: this.map.field};
+			var res = {tiles:[], surface: [], field: this.map.field};
 			for (var i=0;i<this.conf.tiles.length;i++)
 				res.tiles.push(this.conf.tiles[i].name);
+			for (var i=0;i<this.conf.surface.length;i++)
+				res.surface.push(this.conf.surface[i].name);
 			return res;
 		},
 		randomize: function(entities) {
@@ -196,15 +226,14 @@
 					var x = Math.random()*map.width|0;
 					var y = Math.random()*map.height|0;
 					var c = 50;
-					while (c>0 && (this.conf.tiles[map.field[y][x]].level != 2 || this.obj[y][x] != null))
+					while (c>0 && (this.conf.tiles[map.field[y][x]&0xff].type != "floor" || this.obj[y][x] != null))
 					{
 						x = Math.random()*map.width|0;
 						y = Math.random()*map.height|0;
 						c--;
 					}
 					//FLOOR
-					var tp = this.conf.tiles[map.field[y][x]].type;
-					if (tp == "floor" && this.obj[y][x] == null) {
+					if (this.obj[y][x] == null) {
 						var sx = Math.random()*type.framesX | 0;
 						var sy = Math.random()*type.framesY | 0;
 						if (type.prob) {
@@ -228,6 +257,15 @@
 							size: size};
 					}
 				}
+			}
+		},
+		setTile: function(x, y, value) {
+			if (x<0 || y<0 || x>=this.width || y>=this.height) return;
+			var s = this.conf.tiles[value].surface;
+			if (s != null && s.type != 1)
+				this.map.set(x, y, value | (s.id<<8))
+			else {
+				this.map.setTile(x, y, value);
 			}
 		}
 	}

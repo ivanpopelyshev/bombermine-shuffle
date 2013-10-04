@@ -53,7 +53,7 @@
 					y -= this.canvas.height/2 - this.camY;
 					x = x/TILE|0
 					y = y/TILE|0
-					this.game.map.set(x, y, this.tileSelected.id)
+					this.game.setTile(x, y, this.tileSelected.id)
 					this.game.rmObj(x, y);
 					this.builderRedraw = true;
 					return;
@@ -73,64 +73,80 @@
 			this.camX = cX;
 			this.camY = cY;
 		},
-		getTileNumberSurface: function(buf, line1, line2, line3) {
+		getSurfaceByTile: function(tileNum) {
 			var conf = this.game.conf;
-			var tile = conf.tiles[buf[line2]];
-			if (tile.surface == conf.defaultSurface)
-				return tile.surfaceImg;
+			if (conf.tiles[tileNum&0xff].level == 2)
+				return -1;
+			var tile = conf.tiles[tileNum&0xff].surface || conf.surface[tileNum>>8];
+			return tile.id;
+		},
+		getSurfaceNumber: function(buf, line1, line2, line3) {
+			var conf = this.game.conf;
+			var id = buf[line2];
+			if (id==-1) return -1;
+			var tile = conf.surface[id];
+			if (tile == conf.defaultSurface || tile.type == 2)
+				return tile.image;
 			//AUTOTILE #1
 			var test = this.testSurf;
-			test[0] = conf.tiles[buf[line1-1]].surface != tile.surface;
-			test[1] = conf.tiles[buf[line1]].surface != tile.surface;
-			test[2] = conf.tiles[buf[line1+1]].surface != tile.surface;
-			test[3] = conf.tiles[buf[line2-1]].surface != tile.surface;
-			test[5] = conf.tiles[buf[line2+1]].surface != tile.surface;
-			test[6] = conf.tiles[buf[line3-1]].surface != tile.surface;
-			test[7] = conf.tiles[buf[line3]].surface != tile.surface;
-			test[8] = conf.tiles[buf[line3+1]].surface != tile.surface;
+			var id2 = buf[line1-1];
+			test[0] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
+			var id2 = buf[line1];
+			test[1] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
+			var id2 = buf[line1+1];
+			test[2] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
+			var id2 = buf[line2-1];
+			test[3] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
+			var id2 = buf[line2+1];
+			test[5] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
+			var id2 = buf[line3-1];
+			test[6] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
+			var id2 = buf[line3];
+			test[7] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
+			var id2 = buf[line3+1];
+			test[8] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
 			if (!test[0] && !test[1] && !test[2] &&
 				!test[3] && !test[5] &&
 				!test[6] && !test[7] && !test[8])
-				return tile.surfaceImg;
-			var res = tile.surfaceImg;
+				return tile.image;
+			var res = tile.image;
 			if (res == -1) return res;
 			var r;
 			for (var i=0;i<4; i++) {
 				var dx = i&1, dy = i>>1;
 				var dx2 = dx*2-1, dy2 = dy*2-1;
+				var r;
 				if (test[4+dx2]) {
 					if (test[4+dy2*3]) {
-						r = 4;
-					} else r = 26 - dx2*2;
+						r = 2;
+					} else r = 13 - dx2*2;
 				} else if (test[4+dy2*3]) {
-					r = 26 - dy2*12;
+					r = 13 - dy2*8;
 				} else if (test[4 + dx2 + dy2*3]) {
-					r = 26 - dx2*2 - dy2*12;
-				} else r = 2;
-				r += dx + dy*6;
-				if (r<0 || r>=48)
-					throw "autotile fail";
+					r = 13 - dx2*2 - dy2*8;
+				} else r = 0;
+				r+= dx + dy*4;
 				res |= (r<<(8+i*6));
 			}
 			return res;
 		},
 		getTileNumber : function(buf, line1, line2, line3) {
 			var conf = this.game.conf;
-			var tile = conf.tiles[buf[line2]];
-			var U = conf.tiles[buf[line1]];
-			var D = conf.tiles[buf[line3]];
+			var tile = conf.tiles[buf[line2]&0xff];
+			var U = conf.tiles[buf[line1]&0xff];
+			var D = conf.tiles[buf[line3]&0xff];
 			var low = (tile.bottomLess && !U.bottomLess)?U.deepImg:-1,
 				mid = tile.floorImg, 
-				high = (tile.level == 4 && D.level == 4 && tile.ceilingImg2 != -1) ? tile.ceilingImg2 : tile.ceilingImg;
+				high = (tile.level == 2 && D.level == 2 && tile.ceilingImg2 != -1) ? tile.ceilingImg2 : tile.ceilingImg;
 			var shadow = 0;
-			if (tile.level != 4) {
-				var L = conf.tiles[buf[line2-1]];
-				var DL = conf.tiles[buf[line3-1]];
-				if (DL.level == 4) {
-					if (L.level == 4) 
+			if (tile.level != 2) {
+				var L = conf.tiles[buf[line2-1]&0xff];
+				var DL = conf.tiles[buf[line3-1]&0xff];
+				if (DL.level == 2) {
+					if (L.level == 2) 
 						shadow = 1;
 					else shadow = 2;
-				} else if (L.level == 4) {
+				} else if (L.level == 2) {
 					shadow = 3;
 				}
 			}
@@ -161,20 +177,20 @@
 						v2>>>=8;
 						if (v2!=0) {
 							ind = v2&63;
-							x = ((v2&63)%6 - 2)*asset.frameWidth/2; 
-							y = ((v2&63)/6 | 0)*asset.frameHeight/2;
+							x = (v2&3)*asset.frameWidth/2; 
+							y = ((v2&63)>>2)*asset.frameHeight/2;
 							context.drawImage(asset.image, asset.frames[num].x + x, asset.frames[num].y + y, asset.frameWidth/2, asset.frameHeight/2,  i*TILE, j*TILE, TILE/2, TILE/2);					
 							v2>>>=6;
-							x = ((v2&63)%6 - 2)*asset.frameWidth/2; 
-							y = ((v2&63)/6 | 0)*asset.frameHeight/2;
+							x = (v2&3)*asset.frameWidth/2; 
+							y = ((v2&63)>>2)*asset.frameHeight/2;
 							context.drawImage(asset.image, asset.frames[num].x + x, asset.frames[num].y + y, asset.frameWidth/2, asset.frameHeight/2,  i*TILE+TILE/2, j*TILE, TILE/2, TILE/2);					
 							v2>>>=6;
-							x = ((v2&63)%6 - 2)*asset.frameWidth/2; 
-							y = ((v2&63)/6 | 0)*asset.frameHeight/2;
+							x = (v2&3)*asset.frameWidth/2; 
+							y = ((v2&63)>>2)*asset.frameHeight/2;
 							context.drawImage(asset.image, asset.frames[num].x + x, asset.frames[num].y + y, asset.frameWidth/2, asset.frameHeight/2,  i*TILE, j*TILE+TILE/2, TILE/2, TILE/2);					
 							v2>>>=6;
-							x = ((v2&63)%6 - 2)*asset.frameWidth/2; 
-							y = ((v2&63)/6 | 0)*asset.frameHeight/2;
+							x = (v2&3)*asset.frameWidth/2; 
+							y = ((v2&63)>>2)*asset.frameHeight/2;
 							context.drawImage(asset.image, asset.frames[num].x + x, asset.frames[num].y + y, asset.frameWidth/2, asset.frameHeight/2,  i*TILE+TILE/2, j*TILE+TILE/2, TILE/2, TILE/2);					
 						} else context.drawImage(asset.image, asset.frames[num].x, asset.frames[num].y, asset.frameWidth, asset.frameHeight,  i*TILE, j*TILE, TILE, TILE);	
 					}
@@ -302,8 +318,10 @@
 					var t = this.getTileNumber(b, 2, 5, 8);
 					var num = t & 0xff;
 					if (num!=255) context.drawImage(asset.image, asset.frames[num].x, asset.frames[num].y, asset.frameWidth, asset.frameHeight,  x*TILE, y*TILE, TILE, TILE);					
-					num = tiles[i].surfaceImg&0xff;
-					if (num!=255) context.drawImage(asset.image, asset.frames[num].x, asset.frames[num].y, asset.frameWidth, asset.frameHeight,  x*TILE, y*TILE, TILE, TILE);					
+					if (tiles[i].surface) {
+						num = tiles[i].surface.image & 0xff;
+						if (num!=255) context.drawImage(asset.image, asset.frames[num].x, asset.frames[num].y, asset.frameWidth, asset.frameHeight,  x*TILE, y*TILE, TILE, TILE);					
+					}
 					num = (t>>8)&0xff;					
 					if (num!=255) context.drawImage(asset.image, asset.frames[num].x, asset.frames[num].y, asset.frameWidth, asset.frameHeight,  x*TILE, y*TILE, TILE, TILE);
 					num = (t>>16)&0xff;
