@@ -176,12 +176,16 @@
 			console.log(tiles);
 		},
 		defaultTile: null,
+		defaultSurface: null,
 		defaultDeepTile: null,
 		setDefaultTile: function(tile) {
 			this.defaultTile = tile;
 		},
 		setDefaultDeepTile: function(tile) {
 			this.defaultDeepTile = tile;
+		},
+		setDefaultSurface: function(tile) {
+			this.defaultSurface = tile;
 		},
 		link: function() {		
 			if (this.defaultTile == null)
@@ -227,6 +231,11 @@
 				if (!tile.deep) tile.deep = this.defaultDeepTile;
 				if (!tile.floor && tile.level == 3 && defTile.level == 2) {
 					tile.floor = defTile;
+				}
+				if (tile.level == 1)
+					tile.surface = tile;
+				if (!tile.surface && tile.level >= 2 && defTile.level == 1) {
+					tile.surface = defTile;
 				}
 			}
 		}

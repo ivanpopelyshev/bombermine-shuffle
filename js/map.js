@@ -103,6 +103,7 @@
 		this.x = x;
 		this.y = y;
 		this.visual = createOneDimArray(CHUNK_SIZE * CHUNK_SIZE);
+		this.visual2 = createOneDimArray(CHUNK_SIZE * CHUNK_SIZE);
 		this.changes = [];
 	}
 	
@@ -133,9 +134,18 @@
 				for (var i=0;i<CHUNK_SIZE; i++) {
 					var k2 = W2 * (j+1) + (i+1);
 					var v = helper.getTileNumber(this.mem, k2 - W2, k2, k2 + W2);
+					var mod = 0;
 					if (v!=this.visual[k]) {
 						this.visual[k] = v;
-						if (changes.length<10) 
+						if (changes.length<10) {
+							mod = 1;
+							changes.push(k);
+						}
+					}
+					v = helper.getTileNumberSurface(this.mem, k2 - W2, k2, k2 + W2);
+					if (v!=this.visual2[k]) {
+						this.visual2[k] = v;
+						if (changes.length<10 && mod==0) 
 							changes.push(k);
 					}
 					k++;
