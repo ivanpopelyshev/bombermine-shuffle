@@ -5,11 +5,15 @@ app.addAssets({
 	url: "img/tileset.png",
 	frameWidth: 32,
 	frameHeight: 32,
-	rows: [["grass", "grass2", "grass3", "field", "hole1", "hole2", "hole3", "hole4"],
-		["rocky", "rocky_hole", "dirty", "dirty_hole", "bridge_h", "bridge_v", "bridge_metal_v", "bridge_metal_h"],
-		["tile1", "tile2", "tile3", "tile4", "left", "up", "right", "down"],
+	rows: [
+		["grass", "", "deep", "", "sand", "", "dirt"],
+		[],
+		[],
+		["rocky1", "grass2", "grass3", "field", "hole1", "hole2", "hole3", "hole4"],
+		["", "rocky_hole", "", "dirty_hole", "bridge_h", "bridge_v", "bridge_metal_v", "bridge_metal_h"],
+		["tile", "tile2", "tile3", "tile4", "left", "up", "right", "down"],
 		["button_off", "button_on", "bridge_off", "bridge_on", "tile_blue", "tile_red", "tile_yellow", "tile_purple"],
-		["deep_default", "deep_bridge", "sand", "sand1", "sand2", "well"],
+		["deep_default", "deep_bridge", "", "", "", "well"],
 		["rock3-plain", "rock3", "rock2-plain", "rock2", "rock1-plain", "rock1", "rock0-plain", "rock0"],
 		["chest_in_rock-plain", "chest_in_rock", "silver2-plain", "silver2", "silver1-plain", "silver1", "silver0-plain", "silver0"],
 		["tough9", "tough6", "gold2-plain", "gold2", "gold1-plain", "gold1", "gold0-plain", "gold0"],
@@ -26,43 +30,60 @@ app.addAssets({
 var conf = app.conf, 
 	newTile = conf.newTile.bind(conf), 
 	newGroup = conf.newGroup.bind(conf), 
+	newSurface = conf.newSurface.bind(conf), 
+	newDeep = conf.newDeep.bind(conf), 
+	getDeep = conf.getDeep.bind(conf), 
+	getSurface = conf.getSurface.bind(conf), 
 	sub = conf.newTile.bind(conf),
 	getTile = conf.getTile.bind(conf);
 
-conf.setDefaultTile(getTile("grass"))
-conf.setDefaultDeepTile(getTile("deep_default"))
-	
+conf.setDefaultTile(newTile("nothing"))
+
+conf.setDefaultDeep(newDeep("deep_default"))
+newDeep("deep_bridge");
+
+newSurface("grass")
+newSurface("deep", {type: 1})
+newSurface("dirt")
+newSurface("sand")
+newSurface("tile", {type: 2})
+conf.setDefaultSurface(newSurface("rocky1"));
+
+newTile("cactus");
+
+newGroup("basic", {
+	type: "floor",
+    subTiles: [
+        sub("sand1", { surface: "sand" })
+    ]
+})
+
+newTile("abyss", { surface: "deep", type: "abyss", bottomLess: true });
+
 newGroup("grass", {
     type: "floor",
+	surface: "grass",
     subTiles: [
-        sub("grass"),
+         sub("grass1"),
         sub("grass2"),
         sub("grass3")
     ]
 });
 
-newTile("abyss", {bottomLess: true, type: "abyss"})
+newTile("field", { surface: "grass" });
 
-newTile("field");
-newGroup("deep", {
-	bottomLess: true,
-    type: "deep",
-    subTiles: [
-        sub("deep_default"),
-        sub("deep_bridge")
-    ]
-})
 newGroup("hole", {
     type: "floor",
     subTiles: [
-        sub("hole1"),
-        sub("hole2"),
-        sub("hole3"),
-        sub("hole4")
+        sub("hole1", { surface: "grass" }),
+        sub("hole2", { surface: "grass" }),
+        sub("hole3", { surface: "rocky1" }),
+        sub("hole4", { surface: "rocky1" })
     ]
 })
 newGroup("rocky", {
     type: "floor",
+	surface: "rocky1",
     subTiles: [
         sub("rocky"),
         sub("rocky_hole")
@@ -70,6 +91,7 @@ newGroup("rocky", {
 })
 newGroup("dirty", {
     type: "floor",
+	surface: "dirt",
     subTiles: [
         sub("dirty"),
         sub("dirty_hole")
@@ -77,7 +99,8 @@ newGroup("dirty", {
 })
 newGroup("bridge", {
     type: "floor",
-    deep: getTile("deep_bridge"),
+	surface: "deep",
+    deep: "deep_bridge",
     subTiles: [
         sub("bridge_h"),
         sub("bridge_v")
@@ -85,7 +108,8 @@ newGroup("bridge", {
 })
 newGroup("bridge_metal", {
     type: "floor",
-    deep: getTile("deep_bridge"),
+	surface: "deep",
+    deep: "deep_bridge",
     subTiles: [
         sub("bridge_metal_v"),
         sub("bridge_metal_h")
@@ -93,6 +117,7 @@ newGroup("bridge_metal", {
 })
 newGroup("tile", {
     type: "floor",
+	surface: "tile",
     subTiles: [
         sub("tile1"),
         sub("tile2"),
@@ -102,7 +127,8 @@ newGroup("tile", {
 })
 newGroup("arrow", {
     type: "arrow",
-    deep: getTile("deep_bridge"),
+	surface: "tile",
+    deep: "deep_bridge",
     subTiles: [
         sub("left"),
         sub("up"),
@@ -169,8 +195,8 @@ newTile("metal", {
 newGroup("tunnel", {
     type: "tunnel",
 	subTiles: [
-		sub("tunnel", {floor: "rocky"}),
-		sub("tunnel_tile", {floor: "tile1"})
+		sub("tunnel", {surface: "rocky1"}),
+		sub("tunnel_tile", {surface: "tile"})
 	]
 })
 newGroup("chest", {
@@ -178,16 +204,16 @@ newGroup("chest", {
 	subTiles: [
 		sub("chest"),
 		sub("gold_chest"),
-		sub("gold_chest_tile", {floor:getTile("tile1")}),
+		sub("gold_chest_tile", {surface: "tile"}),
 		sub("metal_chest"),
-		sub("metal_chest_tile", {floor:getTile("tile1")}),
+		sub("metal_chest_tile", {surface: "tile"}),
 		sub("diamond_chest")
 	]
 })
 
 newGroup("box", {
     type: "box",
-    floor: getTile("tile1"),
+    surface: "tile",
     subTiles: [
         sub("box1"),
         sub("box2")
@@ -198,17 +224,17 @@ newGroup("box_bombs", {
     type: "box",
     subTiles: [
         sub("box_with_bombs"),
-        sub("box_with_bombs_tile", {floor: "tile1"})
+        sub("box_with_bombs_tile", {surface: "tile"})
     ]
 })
 
 newTile("goal", {
     type: "building",
-    floor: "field"
+    floor: "field",
 })
 
 newTile("wc", {
-    type: "building",
+    type: "building"
 })
 newGroup("bush", {
     subTiles: [
@@ -217,13 +243,14 @@ newGroup("bush", {
     ]
 })
 newGroup("gate", {
-    floor: getTile("rocky"),
+    surface: "rocky1",
     subTiles: [
         sub("gate_closed", {type: "box"}),
         sub("gate_opened", {type: "building"}) 
     ]
 })
 newGroup("button", {
+    surface: "tile",
     type: "floor",
     subTiles: [    
         sub("button_off"),
@@ -232,6 +259,7 @@ newGroup("button", {
     ]
 })
 newGroup("button_toggle", {
+    surface: "tile",
     type: "floor",
     subTiles: [    
         sub("button2_off", {floor:"button_off"}),
@@ -239,6 +267,7 @@ newGroup("button_toggle", {
     ]
 })
 newGroup("bridge_toggle", {
+    surface: "deep",
 	bottomLess : true,
     subTiles: [
         sub("bridge_off", {type: "abyss"}),

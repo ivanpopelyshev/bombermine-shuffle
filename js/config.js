@@ -1,6 +1,8 @@
 // Bombermine JS version 0.0.1 tiles config
 
 (function(exports) {
+	var FLOOR = 0, CEILING = 1, SOLID = 2;
+
 	var Tile = function() {
 	}
 	
@@ -15,7 +17,6 @@
 		image: -1,
 		imagePlain: -1,
 		deepImg: -1,
-		surfaceImg: -1,
 		floorImg: -1,
 		ceilingImg: -1,	
 		ceilingImg2: -1,
@@ -29,6 +30,17 @@
 		ceiling: null
 		//levels: 0 - deep, 1 - surface, 2 - floor, 3- ceiling 4-ceiling+use plain
 	}
+	
+	var SimpleTile = function() {
+	}
+	
+	SimpleTile.prototype = {
+		init: false,
+		type: "",
+		id: -1,
+		name: "",
+		image: -1
+	};
 	
 	var TileGroup = function() {
 		this.tiles = []
@@ -47,18 +59,18 @@
 	
 	Conf = function() {
 		this.tiles = [];
+		this.surface = [];
+		this.deep = [];
 		this.groups = [];
 		this.tileByName = {};
 		this.groupByName = {};
 	}
 	
-	function floorByType(name) {
-		if (name == "deep") return 0;
-		if (name == "surface") return 1;
-		if (name == "floor" || name=="arrow" || name=="abyss") return 2;
-		if (name == "ceiling" || name=="box" || name=="building" || name=="tunnel") return 3;
-		if (name == "solid" || name=="glass" || name=="hideout") return 4;
-		return 1;
+	function levelByType(name) {
+		if (name == "floor" || name=="arrow" || name=="abyss") return FLOOR;
+		if (name == "ceiling" || name=="box" || name=="building" || name=="tunnel") return CEILING;
+		if (name == "solid" || name=="glass" || name=="hideout") return SOLID;
+		return CEILING;
 	}
 	
 	Conf.prototype = {
@@ -71,8 +83,8 @@
 					if (map.hasOwnProperty(key))
 						tile[key] = map[key];
 			}
-			tile.deep = this.getTile(tile.deep);
-			tile.surface = this.getTile(tile.surface);
+			tile.deep = this.getDeep(tile.deep);
+			tile.surface = this.getSurface(tile.surface);
 			tile.floor = this.getTile(tile.floor);
 			tile.ceiling = this.getTile(tile.ceiling);
 			return tile;
@@ -95,6 +107,64 @@
 				this.tileByName[name] = tile;
 			return tile;
 		},
+		newSurface: function(name, map) {
+			var tile = this.getSurface(name);
+			if (tile.init) throw "Second time creating surface tile";
+			tile.init = true;
+			if (map) {
+				for (var key in map)
+					if (map.hasOwnProperty(key))
+						tile[key] = map[key];
+			}
+			return tile;
+		},
+		getSurface: function(name) {
+			if (typeof name != "string") {
+				// its not the name!
+				return name;
+			}
+			var id = -1;
+			for (var i=0;i<this.surface.length;i++)
+				if (this.surface[i].name == name)
+					return this.surface[i];
+			index = this.surface.length;
+			var tile = new SimpleTile();
+			tile.id = index;
+			tile.name = name;
+			this.surface.push(tile);
+			if (name!="")
+				this.tileByName[name] = tile;
+			return tile;
+		},
+		newDeep: function(name, map) {
+			var tile = this.getDeep(name);
+			if (tile.init) throw "Second time creating deep tile";
+			tile.init = true;
+			if (map) {
+				for (var key in map)
+					if (map.hasOwnProperty(key))
+						tile[key] = map[key];
+			}
+			return tile;
+		},
+		getDeep: function(name) {
+			if (typeof name != "string") {
+				// its not the name!
+				return name;
+			}
+			var id = -1;
+			for (var i=0;i<this.deep.length;i++)
+				if (this.deep[i].name == name)
+					return this.deep[i];
+			index = this.deep.length;
+			var tile = new SimpleTile();
+			tile.id = index;
+			tile.name = name;
+			this.deep.push(tile);
+			if (name!="")
+				this.tileByName[name] = tile;
+			return tile;
+		},
 		newGroup: function(name, map) {
 			if (this.groupByName.hasOwnProperty(name))
 				throw "Second time creating group '"+name+"'";
@@ -108,8 +178,8 @@
 				if (map.hasOwnProperty(key))
 					group[key] = map[key];
 					
-			group.deep = this.getTile(group.deep);
-			group.surface = this.getTile(group.surface);
+			group.deep = this.getDeep(group.deep);
+			group.surface = this.getSurface(group.surface);
 			group.floor = this.getTile(group.floor);
 			group.ceiling = this.getTile(group.ceiling);
 					
@@ -124,6 +194,14 @@
 			for (var i=0; i<tiles.length; i++) {
 				var tile = tiles[i];
 				tile.image = tile.image2 = -1;
+			}
+			for (var i=0; i<this.surface.length; i++) {
+				var tile = this.surface[i];
+				tile.image = -1;
+			}
+			for (var i=0; i<this.deep.length; i++) {
+				var tile = this.deep[i];
+				tile.image = -1;
 			}
 			//TODO: multiple sprites	
 			//TODO: surfaces
@@ -159,29 +237,30 @@
 			for (var i=0; i<tiles.length; i++) {
 				var tile = tiles[i];
 				tile.deepImg = tile.deep?tile.deep.image:-1;
-				tile.surfaceImg = tile.surface?tile.surface.image:-1;
 				tile.floorImg = tile.floor?tile.floor.image:-1;
 				tile.ceilingImg = tile.ceiling?tile.ceiling.image:-1;
 				tile.ceilingImg2 = tile.ceiling?tile.ceiling.image2:-1;
 				if (tile.image != -1) {
 					switch (tile.level) {
-						case 0: tile.deepImg = tile.image; break;
-						case 1: tile.surfaceImg = tile.image; break;
-						case 2: tile.floorImg = tile.image; break;
-						case 4: tile.ceilingImg2 = tile.image2; 
-						case 3: tile.ceilingImg = tile.image; break;
+						case 0: tile.floorImg = tile.image; break;
+						case 2: tile.ceilingImg2 = tile.image2; 
+						case 1: tile.ceilingImg = tile.image; break;
 					}
 				}
 			}
 			console.log(tiles);
 		},
 		defaultTile: null,
-		defaultDeepTile: null,
+		defaultSurface: null,
+		defaultDeep: null,
 		setDefaultTile: function(tile) {
 			this.defaultTile = tile;
 		},
-		setDefaultDeepTile: function(tile) {
-			this.defaultDeepTile = tile;
+		setDefaultDeep: function(tile) {
+			this.defaultDeep = tile;
+		},
+		setDefaultSurface: function(tile) {
+			this.defaultSurface = tile;
 		},
 		link: function() {		
 			if (this.defaultTile == null)
@@ -205,7 +284,6 @@
 									//2. set tile image to tile
 				}
 			}
-			//3. set tile deep = default deep if tile deep is -1. Set tile deep to -1 if it points to bad tile
 			tiles = this.tiles;
 			for (var i=0; i<tiles.length; i++) {
 				tile = tiles[i];
@@ -214,19 +292,18 @@
 				}
 				if (tile.level == -1) {
 					if (tile.type != "")
-						tile.level = floorByType(tile.type)
+						tile.level = levelByType(tile.type)
 					else {
 						tile.type = "floor";
-						tile.level = 2; //floor
+						tile.level = FLOOR; //floor
 					}
 				}
 			}
-			var defTile = this.defaultTile;
 			for (var i=0; i<tiles.length; i++) {
 				tile = tiles[i];
-				if (!tile.deep) tile.deep = this.defaultDeepTile;
-				if (!tile.floor && tile.level == 3 && defTile.level == 2) {
-					tile.floor = defTile;
+				if (!tile.deep) tile.deep = this.defaultDeep;
+				if (!tile.floor && tile.level == CEILING && this.defaultTile.level == FLOOR) {
+					tile.floor = this.defaultTile;
 				}
 			}
 		}
