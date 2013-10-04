@@ -6,11 +6,11 @@ app.addAssets({
 	frameWidth: 32,
 	frameHeight: 32,
 	rows: [
-		["grass", "", "deep", "", "sand"],
+		["grass", "", "deep", "", "sand", "", "dirt"],
 		[],
 		[],
 		["rocky1", "grass2", "grass3", "field", "hole1", "hole2", "hole3", "hole4"],
-		["", "rocky_hole", "dirty", "dirty_hole", "bridge_h", "bridge_v", "bridge_metal_v", "bridge_metal_h"],
+		["", "rocky_hole", "", "dirty_hole", "bridge_h", "bridge_v", "bridge_metal_v", "bridge_metal_h"],
 		["tile", "tile2", "tile3", "tile4", "left", "up", "right", "down"],
 		["button_off", "button_on", "bridge_off", "bridge_on", "tile_blue", "tile_red", "tile_yellow", "tile_purple"],
 		["deep_default", "deep_bridge", "", "", "", "well"],
@@ -44,9 +44,12 @@ newDeep("deep_bridge");
 
 newSurface("grass")
 newSurface("deep", {type: 1})
+newSurface("dirt")
 newSurface("sand")
 newSurface("tile", {type: 2})
 conf.setDefaultSurface(newSurface("rocky1"));
+
+newTile("cactus");
 
 newGroup("basic", {
 	type: "floor",
@@ -88,7 +91,7 @@ newGroup("rocky", {
 })
 newGroup("dirty", {
     type: "floor",
-	surface: "rocky1",
+	surface: "dirt",
     subTiles: [
         sub("dirty"),
         sub("dirty_hole")
