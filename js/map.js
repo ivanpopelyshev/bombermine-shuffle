@@ -51,8 +51,7 @@
 							this.field[j][i] |= conf.defaultSurface.id << 8;
 						else
 							this.field[j][i] |= tile.id << 8;
-					} else 
-						this.field[j][i] |= conf.defaultSurface.id << 8;
+					}
 				}
 		}
 		this.init();
