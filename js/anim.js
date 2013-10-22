@@ -1,41 +1,85 @@
 app.addModule({afterStart: function (app) {	
 
-	var startX = 0, startY = 0, pressed = false, drag = false;
+	var startX = 0, startY = 0, pressed = false, drag = false, dragSel = false;
+	var TILE = 32;
+	$("#builder").mousedown(function(e) {
+		var x = e.pageX - e.target.offsetLeft - e.target.parentNode.offsetLeft;
+		var y = e.pageY - e.target.offsetTop - e.target.parentNode.offsetTop;
+		app.builder.selectAt(x, y);
+		app.builder.render();
+		e.preventDefault();
+		e.stopPropagation();
+	});
 	$("#screen").mousedown(function(e){
 		pressed = true;
 		drag = false;
+		var renderer = app.renderer;
+		var editor = app.game.editor;
 		startX = e.pageX - e.target.offsetLeft;
 		startY = e.pageY - e.target.offsetTop;
-		app.renderer.renderAll();
+		dragSel = editor.selectionHasPoint(app.renderer.point(startX, startY));
+		if (app.tool == 1)
+			editor.pencilAt(renderer.point(startX, startY), 0);
+		else if (app.tool == 2)
+			editor.selectAt(renderer.point(startX, startY), 0);
+		renderer.renderAll();
 	});
+	function doDrag(x, y) {
+		var renderer = app.renderer;
+		var editor = app.game.editor;
+		if (!drag && (Math.abs(x-startX)>=5 || Math.abs(y-startY)>=5)) {
+			drag = true;
+		}
+		if (drag) {
+			var dx = x - startX, dy = y-startY;
+			if (dragSel) {
+				var tileDx = (dx/TILE) | 0, tileDy = (dy/TILE) | 0;
+				if (tileDx!=0||tileDy!=0) {
+					editor.moveSelection(tileDx, tileDy);
+					startX += tileDx * TILE;
+					startY += tileDy * TILE;
+				}
+			} else {
+				startX = x;
+				startY = y;
+				renderer.moveCam(-dx, -dy);
+			}
+		}
+		return drag;
+	}
+	
 	$("#screen").mousemove(function(e) {
 		if (!pressed) return;
 		var renderer = app.renderer;
+		var editor = app.game.editor;
 		var x = e.pageX - e.target.offsetLeft;
 		var y = e.pageY - e.target.offsetTop;
-		drag = drag || Math.abs(x-startX)>=5 || Math.abs(y-startY)>=5;
-		if (drag) {
-			var dx = x - startX, dy = y-startY;
-			startX = x;
-			startY = y;
-			app.renderer.moveCam(-dx, -dy);
+		if (app.tool == 0) {
+			doDrag(x, y);
+		} else if (app.tool == 1) {
+			editor.pencilAt(renderer.point(x, y), 1);
+		} else if (app.tool == 2) {
+			editor.selectAt(renderer.point(x, y), 1);
 		}
-		app.renderer.renderAll();
+		renderer.renderAll();
 	});
 	$("#screen").mouseup(function(e){
 		if (!pressed) return;
+		var renderer = app.renderer;
+		var editor = app.game.editor;
 		pressed = false;
 		var x = e.pageX - e.target.offsetLeft;
 		var y = e.pageY - e.target.offsetTop;
-		drag = drag || Math.abs(x-startX)>=5 || Math.abs(y-startY)>=5;
-		if (drag) {
-			var dx = x - startX, dy = y-startY;
-			app.renderer.moveCam(-dx,-dy);
-		} else
-			app.renderer.selectAt(x,y);
-		app.renderer.renderAll();
+		if (app.tool == 0) {
+			if (!doDrag(x, y))
+				editor.cursorAt(renderer.point(x,y));
+		} else if (app.tool == 1) {
+			editor.pencilAt(renderer.point(x, y), 2);
+		} else if (app.tool == 2) {
+			editor.selectAt(renderer.point(x, y), 2);
+		}
+		renderer.renderAll();
 	});
-	
 	var keyUp = false, keyDown = false, keyLeft = false, keyRight = false, 
 		keySpace = false, keyEnter = false, redraw = false;
 		
@@ -45,7 +89,7 @@ app.addModule({afterStart: function (app) {
 		var renderer = app.renderer;
 		var game = app.game;
 		if (!keyUp && !keyDown && !keyLeft && !keyRight && !keySpace && !keyEnter && !redraw) return;
-		var p = renderer.camSelected;
+		var p = game.editor.entity;
 		if (p==null || !p.type.animSpeed) return;
 		p.step = p.step || 0;
 		p.step += p.type.speed * tick / p.type.animSpeed;

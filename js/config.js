@@ -302,9 +302,6 @@
 			for (var i=0; i<tiles.length; i++) {
 				tile = tiles[i];
 				if (!tile.deep) tile.deep = this.defaultDeep;
-				if (!tile.floor && tile.level == CEILING && this.defaultTile.level == FLOOR) {
-					tile.floor = this.defaultTile;
-				}
 			}
 		}
 	}
