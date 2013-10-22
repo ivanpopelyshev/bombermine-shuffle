@@ -3,8 +3,8 @@ app.addModule({afterStart: function (app) {
 	var startX = 0, startY = 0, pressed = false, drag = false, dragSel = false;
 	var TILE = 32;
 	$("#builder").mousedown(function(e) {
-		var x = e.pageX - e.target.offsetLeft - e.target.parentNode.offsetLeft;
-		var y = e.pageY - e.target.offsetTop - e.target.parentNode.offsetTop;
+		var x = e.pageX - e.target.offsetLeft - e.target.parentNode.offsetLeft- e.target.parentNode.parentNode.offsetLeft;
+		var y = e.pageY - e.target.offsetTop - e.target.parentNode.offsetTop- e.target.parentNode.parentNode.offsetTop;
 		app.builder.selectAt(x, y);
 		app.builder.render();
 		e.preventDefault();

@@ -48,8 +48,8 @@
 		render: function() {		
 			var editor = this.game.editor;
 			var conf = this.game.conf;
-			this.canvas.width = this.canvas.parentNode.clientWidth - 10;
-			this.canvas.height = this.canvas.parentNode.clientHeight - 21;
+			this.canvas.width = this.canvas.parentNode.clientWidth;
+			this.canvas.height = this.canvas.parentNode.clientHeight;
 			
 			var COLS = this.canvas.width >> TILE_BITS;
 			var ROWS = this.canvas.height >> TILE_BITS;

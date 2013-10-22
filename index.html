@@ -2,7 +2,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
-	<link href="css/ui-lightness/jquery-ui-1.10.3.custom.css" rel="stylesheet">
+	<link href="css/start/jquery-ui-1.10.3.custom.css" rel="stylesheet">
 	<script src="lib/jquery-1.10.2.min.js"></script>
 	<script src="lib/jquery-ui-1.10.3.custom.min.js"></script>
 	
@@ -34,10 +34,12 @@
 	<script>
 
 function initToolBar() {		
+	$("#tool button, #tool input").focus(function(e) { $("#screen").focus() })
 	$( "#action-fill" ).button({
     }).click(function() {
 		app.game.editor.fill();
 		app.renderer.renderAll();
+		return false;
 	});
 	$( "#action-copy" ).button({
 		icons: {
@@ -47,8 +49,8 @@ function initToolBar() {
 		app.game.editor.copy();
 		app.saveSettings();
 		app.renderer.renderAll();
-	});
-	$( "#action-paste" ).button({
+		return false;
+	}).next().button({
 		icons: {
         primary: "ui-icon-clipboard"
       }
@@ -57,21 +59,23 @@ function initToolBar() {
 		app.game.editor.paste(app.renderer.point(canvas.width/2, canvas.height/2));
 		app.renderer.renderAll();
 		$("#tool-cursor").click();
-	});
+		return false;
+	}).parent().buttonset();
 	$( "#action-undo" ).button({
 		icons: {
 			primary: "ui-icon-arrowreturn-1-w"
 		  }
     }).click(function() {
 		app.undo();
-	});
-	$( "#action-redo" ).button({
+		return false;
+	}).next().button({
 		icons: {
 			primary: "ui-icon-arrowreturn-1-e"
 		  }
     }).click(function() {
 		app.redo();
-	});
+		return false;
+	}).parent().buttonset();
     $( "#action-zoom" ).button({
       icons: {
         primary: "ui-icon-zoomin"
@@ -81,47 +85,48 @@ function initToolBar() {
 			app.renderer.camScale = 1.5;
 		else app.renderer.camScale = 1.0;
 		app.renderer.renderAll();
-	})
+		return false;
+	});
 	
-    $( "#tool" ).buttonset();
 	$( "#tool-cursor" ).click(function() {
-		app.tool = 0;
-	})
-	$( "#tool-pencil" ).click(function() {
-		app.tool = 1;
-	})
-	$( "#tool-select" ).click(function() {
-		app.tool = 2;
-	})
+		app.tool = 0;return false;
+	}).next().next().click(function() {
+		app.tool = 1;return false;
+	}).next().next().click(function() {
+		app.tool = 2;return false;
+	}).parent().buttonset();
 	
-    $( "#debug_chunks" ).button().click(function() {
-		app.renderer.debug_chunks = !app.renderer.debug_chunks;
-		app.renderer.renderAll();
-	}); 
-    $( "#debug_zones" ).button().click(function() {
-		app.renderer.debug_zones = !app.renderer.debug_zones;
-		app.renderer.renderAll();
-	}); 
+
     $( "#add_entities" ).button().click(function() {
 		app.game.randomize(app.resources.entities);
 		app.renderer.renderAll();
-	}); 
-    $( "#remove_entities" ).button().click(function() {
+		return false;
+	}).next().button().click(function() {
 		app.game.clearEntities();
 		app.renderer.renderAll();
-	}); 
+		return false;
+	}).parent().buttonset();
+	$( "#debug_chunks" ).button().click(function() {
+		app.renderer.debug_chunks = !app.renderer.debug_chunks;
+		app.renderer.renderAll();
+	})
+	$( "#debug_zones" ).button().click(function() {
+		app.renderer.debug_zones = !app.renderer.debug_zones;
+		app.renderer.renderAll();
+	}).parent().buttonset();
+	$("#builder-dialog").dialog({dialogClass: "build_dialog", width:320, height:400, minWidth:240, minHeight: 200, position: [20, 60], resize: function() { app.builder.render(); }});
 }
+	//
 </script>
-	
 	<style>
   #toolbar { padding: 4px; display: inline-block;position: absolute; left: 20px; top: 20px; }
   body {
 		font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
 		font-size: 62.5%;
 	}
-	
-  #builder-outer { position: absolute; left: 20px; top:70px; width: 416px; height: 250px; padding: 5px; padding-top: 16px; z-index: 100 }
   #builder { }
+  .build_dialog .ui-dialog-content { padding: 0 }
+  .build_dialog .ui-dialog-titlebar-close { display:none }
 	</style>
 </head>
 <body>
@@ -134,19 +139,27 @@ function initToolBar() {
     <input type="radio" id="tool-pencil" name="tool" /><label for="tool-pencil">Pencil</label>
     <input type="radio" id="tool-select" name="tool" /><label for="tool-select">Select</label>
   </span>
-  <button id="action-fill">fill</button>
-  <button id="action-copy">copy</button>
-  <button id="action-paste">paste</button>
-  <button id="action-zoom">zoom</button>
-  <button id="action-undo">undo</button>
-  <button id="action-redo">redo</button>
-  <button id="add_entities">Add entities</button>
-  <button id="remove_entities">Remove entities</button>
-  <input type="checkbox" id="debug_chunks" /><label for="debug_chunks">Show chunks</label>
-  <input type="checkbox" id="debug_zones" /><label for="debug_zones">Show zones</label>
+  <button id="action-fill">Fill</button>
+  <span>
+	<button id="action-copy">Copy</button>
+	<button id="action-paste">Paste</button>
+  </span>
+  <button id="action-zoom">Zoom</button>
+  <span>
+	<button id="action-undo">Undo</button>
+	<button id="action-redo">Redo</button>
+  </span>
+  <span>
+	<button id="add_entities">Add entities</button>
+	<button id="remove_entities">Remove entities</button>
+  </span>
+  <span>
+	<input type="checkbox" id="debug_chunks" /><label for="debug_chunks">Show chunks</label>
+	<input type="checkbox" id="debug_zones" /><label for="debug_zones">Show zones</label>
+  </span>
 </div>
 
-<div id="builder-outer" class="ui-widget-content">
+<div id="builder-dialog" title="Select a tile">
   <canvas id="builder"></canvas>
 </div>
 
