@@ -4,7 +4,7 @@
 	var TILE = 32;
 	var TILE_BITS = 5;
 	var BITS = CHUNK_SIZE_BITS + TILE_BITS;
-	var SHADOW = TILE/8;
+	var SHADOW = TILE/8;	
 
 	var Renderer = function(canvas, game, resources) {
 		this.canvas = canvas;
@@ -19,59 +19,31 @@
 		canvas: null,
 		game: null,
 		resources: null,
-		enableBuilder: true,
-		builderX: 0,
-		builderY: 0,
-		builderW: 0, 
-		builderH: 0,
-		builderCanvas: null,
-		buidlerRedraw: true,
 		camX: 0,
 		camY: 0,
-		camSelected: null,
-		tileSelected: null,
-		selectAt : function(x, y) {
-			if (this.enableBuilder) {
-				if (x>=this.builderX && x<=this.builderX + this.builderW &&
-					y>=this.builderY && y<=this.builderY + this.builderH) {
-					this.camSelected = null;
-					this.tileSelected = null;
-					x -= this.builderX;
-					y -= this.builderY;
-					x = x/TILE|0
-					y = y/TILE|0
-					var ind = x + y * this.builderW / TILE | 0;
-					if (ind>=0 && ind<this.game.conf.tiles.length) {
-						this.tileSelected = this.game.conf.tiles[ind];
-						if (this.tileSelected.type == "deep")
-							this.tileSelected = null;
-					}
-					this.builderRedraw = true;
-					return;
-				} else if (this.tileSelected != null) {
-					x -= this.canvas.width/2 - this.camX;
-					y -= this.canvas.height/2 - this.camY;
-					x = x/TILE|0
-					y = y/TILE|0
-					this.game.setTile(x, y, this.tileSelected.id)
-					this.game.rmObj(x, y);
-					this.builderRedraw = true;
-					return;
-				}
-			}
+		camScale: 1,
 		
-			x -= this.canvas.width/2 - this.camX;
-			y -= this.canvas.height/2 - this.camY;
-			this.camSelected = this.game.getObj(x >> TILE_BITS, y >> TILE_BITS);
+		point : function(x, y) {
+			x -= this.canvas.width/2;
+			y -= this.canvas.height/2;
+			x *= this.camScale
+			y *= this.camScale
+			x += this.camX;
+			y += this.camY;
+			return {x:x, y:y}
 		},
 		moveCam: function(dx, dy) {
-			var cX = this.camX + dx, cY = this.camY + dy;
+			var cX = this.camX + dx * this.camScale, cY = this.camY + dy * this.camScale;
 			if (cX<0) cX = 0;
 			if (cY<0) cY = 0;
 			if (cX>this.game.map.width * TILE) cX = this.game.map.width * TILE;
 			if (cY>this.game.map.height * TILE) cY = this.game.map.height * TILE;
 			this.camX = cX;
 			this.camY = cY;
+		},
+		roundCam: function() {
+			this.camX = this.camX | 0;
+			this.camY = this.camY | 0;
 		},
 		getSurfaceByTile: function(tileNum) {
 			var conf = this.game.conf;
@@ -89,21 +61,22 @@
 				return tile.image;
 			//AUTOTILE #1
 			var test = this.testSurf;
-			var id2 = buf[line1-1];
+			var id2;
+			id2 = buf[line1-1];
 			test[0] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
-			var id2 = buf[line1];
+			id2 = buf[line1];
 			test[1] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
-			var id2 = buf[line1+1];
+			id2 = buf[line1+1];
 			test[2] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
-			var id2 = buf[line2-1];
+			id2 = buf[line2-1];
 			test[3] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
-			var id2 = buf[line2+1];
+			id2 = buf[line2+1];
 			test[5] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
-			var id2 = buf[line3-1];
+			id2 = buf[line3-1];
 			test[6] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
-			var id2 = buf[line3];
+			id2 = buf[line3];
 			test[7] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
-			var id2 = buf[line3+1];
+			id2 = buf[line3+1];
 			test[8] = id2 != id && id2!=-1 && conf.surface[id2].type!=2;
 			if (!test[0] && !test[1] && !test[2] &&
 				!test[3] && !test[5] &&
@@ -111,7 +84,6 @@
 				return tile.image;
 			var res = tile.image;
 			if (res == -1) return res;
-			var r;
 			for (var i=0;i<4; i++) {
 				var dx = i&1, dy = i>>1;
 				var dx2 = dx*2-1, dy2 = dy*2-1;
@@ -176,7 +148,6 @@
 						var x, y;
 						v2>>>=8;
 						if (v2!=0) {
-							ind = v2&63;
 							x = (v2&3)*asset.frameWidth/2; 
 							y = ((v2&63)>>2)*asset.frameHeight/2;
 							context.drawImage(asset.image, asset.frames[num].x + x, asset.frames[num].y + y, asset.frameWidth/2, asset.frameHeight/2,  i*TILE, j*TILE, TILE/2, TILE/2);					
@@ -229,23 +200,36 @@
 			context.fillStyle = "black";
 			context.fillRect(0, 0, canvas.width, canvas.height);
 			context.save();
-			var camX = this.camX, camY = this.camY;
-			var W = canvas.width >> 1, H = canvas.height >> 1;
-			context.translate(W-camX, H-camY);
+			var camX = this.camX, camY = this.camY, camScale = this.camScale;
+			var W = (canvas.width >> 1), H = (canvas.height >> 1);
+			context.translate(W, H)
+			context.scale(1.0/camScale, 1.0/camScale)
+			W*=camScale;
+			H*=camScale;
+			context.translate(-camX, -camY)
 			var X1 = (camX-W) >> TILE_BITS, Y1 = (camY-H) >> TILE_BITS, X2 = (camX+W) >> TILE_BITS, Y2 = (camY+H) >> TILE_BITS;
 			var CX1 = X1 >> CHUNK_SIZE_BITS, CY1 = Y1 >> CHUNK_SIZE_BITS, CX2 = X2 >> CHUNK_SIZE_BITS, CY2 = Y2 >> CHUNK_SIZE_BITS;
 			for (var j=CY1; j<=CY2; j++)
 				for (var i=CX1; i<=CX2;i++) {
 					var chunk = this.game.map.getChunk(i, j);
+					var alpha = 1.0;
+					if (!chunk) {
+						alpha = 0.5;
+						var w = this.game.map.cWidth, h = this.game.map.cHeight;
+						chunk = this.game.map.getChunk((i+w)%w, (j+h)%h);
+					}
 					if (chunk) {
 						if (chunk.dirty>0) {
 							chunk.calcChanges(this);
 							this.renderChunk(chunk);
 							chunk.clean();
 						}
+						context.globalAlpha = alpha;
 						context.drawImage(chunk.canvas, i<<BITS, j<<BITS);
-					}
+						context.globalAlpha = 1.0;
+					} 
 				}
+				
 			for (var j=Y1; j<=Y2; j++)
 				for (var i=X1; i<=X2;i++) {
 					var p = this.game.getObj(i, j);
@@ -272,81 +256,48 @@
 								dW, dH); // screeen size
 					}
 				}
-			var p = this.camSelected;
+			var p = this.game.editor.entity;
 			if (p) {
 				context.strokeStyle = "lime";
 				context.lineWidth = 1;
 				context.strokeRect(p.dx - TILE, p.dy - TILE, 2*TILE, 2*TILE);
 			}
-			context.restore();	
-			if (this.enableBuilder)
-				this.renderBuilder(context);
-			//TODO: draw builder
-		},	
-		//TODO: RENDER BUILDER IN CANVAS CACHE
-		renderBuilder: function(context2) {		
-			var conf = this.game.conf;
-			var COLS = 10;
-			var ROWS = ((conf.tiles.length+3) / COLS | 0) + 1;
-			var builderX = this.builderX = 16;
-			var builderY = this.builderY = this.canvas.height - 16 - ROWS * TILE;
-			var builderW = this.builderW = COLS*TILE;
-			var builderH = this.builderH = ROWS*TILE;
-			var builderCanvas = this.builderCanvas;
-			if (builderCanvas == null) {
-				builderCanvas = this.builderCanvas = document.createElement("canvas");
-				this.builderRedraw = true;
-			}
-			if (builderCanvas.width != builderW || builderCanvas.height != builderH) {
-				builderCanvas.width = builderW;
-				builderCanvas.height = builderH;
-				this.builderRedraw = true;
+			var selection = this.game.editor.selection;
+			if (selection.enabled) {
+				var x1 = Math.min(selection.tileX1, selection.tileX2), x2 = Math.max(selection.tileX1, selection.tileX2) + 1;
+				var y1 = Math.min(selection.tileY1, selection.tileY2), y2 = Math.max(selection.tileY1, selection.tileY2) + 1;
+				context.globalAlpha = 1;
+				context.strokeStyle = "yellow";
+				context.lineWidth = 4;
+				context.strokeRect(x1*TILE, y1*TILE, (x2-x1)*TILE, (y2-y1)*TILE);
 			}
 			
-			var tiles = conf.tiles;
-			var asset = this.resources.tileset;
-			if (this.builderRedraw) {
-				this.builderRedraw = false;
-				var context = builderCanvas.getContext("2d")
-				context.fillStyle = 'black';
-				context.fillRect(0, 0, builderW, builderH);
-				var b = [0, 0, 0, 0, 0, 0, 0, 0, 0], a = [0, 0, 0];
-				for (var i=0;i<tiles.length; i++) {
-					var x = i % COLS, y = i/COLS|0;
-					var tile = tiles[i];
-					b[5] = tile.id;
-					var t = this.getTileNumber(b, 2, 5, 8);
-					var num = t & 0xff;
-					if (num!=255) context.drawImage(asset.image, asset.frames[num].x, asset.frames[num].y, asset.frameWidth, asset.frameHeight,  x*TILE, y*TILE, TILE, TILE);					
-					if (tiles[i].surface) {
-						num = tiles[i].surface.image & 0xff;
-						if (num!=255) context.drawImage(asset.image, asset.frames[num].x, asset.frames[num].y, asset.frameWidth, asset.frameHeight,  x*TILE, y*TILE, TILE, TILE);					
+			
+				
+			if (this.debug_chunks) {
+				context.strokeStyle = "rgba(255,255,255,0.3)"
+				context.lineWidth = 2
+				for (var j=CY1; j<=CY2; j++)
+					for (var i=CX1; i<=CX2;i++) {
+						context.strokeRect(i<<BITS, j<<BITS, 1<<BITS, 1<<BITS);
 					}
-					num = (t>>8)&0xff;					
-					if (num!=255) context.drawImage(asset.image, asset.frames[num].x, asset.frames[num].y, asset.frameWidth, asset.frameHeight,  x*TILE, y*TILE, TILE, TILE);
-					num = (t>>16)&0xff;
-					if (num!=255) context.drawImage(asset.image, asset.frames[num].x, asset.frames[num].y, asset.frameWidth, asset.frameHeight,  x*TILE, y*TILE, TILE, TILE);
-					if (tile.type == "deep") {
-						context.fillStyle = "rgba(255, 0, 0, 0.5f)";
-						context.fillRect(x * TILE, y * TILE, TILE, TILE);
-					}
-				}
-				if (this.tileSelected != null) {
-					var x = this.tileSelected.id % COLS, y = this.tileSelected.id / COLS | 0;
-					context.strokeStyle = "blue";
-					context.lineWidth = 2;
-					context.strokeRect(x * TILE, y * TILE, TILE, TILE);				
-				}
-				var name = this.tileSelected!=null?this.tileSelected.name:"undefined";		
-				context.fillStyle = "white";
-				context.textAlign = "right";
-				context.font = "bold 11px Tahoma, Arial";
-				context.fillText(name, builderW - 10, builderH - 10);
 			}
-			context2.drawImage(builderCanvas, 0, 0, builderW, builderH, builderX, builderY, builderW, builderH);
-			context2.strokeStyle = "white";
-			context2.lineWidth = 2;
-			context2.strokeRect(builderX, builderY, builderW, builderH);
+			
+			if (this.debug_zones) {
+				context.strokeStyle = "aqua"
+				context.lineWidth = 2
+				var W1 = (1<<BITS) - 4;
+				for (var j=CY1; j<=CY2; j++)
+					for (var i=CX1; i<=CX2;i++) {
+						if ((j&1)==0 && (i&1) == ((j>>1)&1)) {
+							var cX = (2*i+1)<<(BITS-1)
+							var cY = (2*j+1)<<(BITS-1)
+							context.strokeRect(cX-W1, cY-W1, W1*2,W1*2);
+						}
+					}
+			}
+			
+			context.restore();
 		}
 	}
 	
