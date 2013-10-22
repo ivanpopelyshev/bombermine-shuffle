@@ -35,24 +35,7 @@
 			this.width = json.field[0].length;
 			this.height = json.field.length;
 			this.field = createTwoDimArray(this.width, this.height, 0);
-			for (var j=0;j<this.height;j++)
-				for (var i=0;i<this.width;i++) {
-					var tileName = json.tiles[json.field[j][i] & 0xff];
-					var tile = conf.tileByName[tileName];
-					if (!tile)
-						this.field[j][i] = conf.defaultTile.id;
-					else
-						this.field[j][i] = tile.id;
-							
-					if (json.surface) {
-						tileName = json.surface[(json.field[j][i] >> 8) &0xff];
-						var tile = conf.tileByName[tileName];
-						if (!tile)
-							this.field[j][i] |= conf.defaultSurface.id << 8;
-						else
-							this.field[j][i] |= tile.id << 8;
-					}
-				}
+			this.loadJSON(conf, json)
 		}
 		this.init();
 	}
@@ -62,8 +45,39 @@
 		height: 0,
 		cWidth: 0,
 		cHeight: 0,
+		revision: 0,
 		modified: false,
 		chunks: null,
+		loadJSON : function(conf, json) {
+			if (json.revision)
+				this.revision = json.revision;
+			if (this.height != json.field.length) throw "wrong map width in previous save";
+			if (this.width != json.field[0].length) throw "wrong map height in previous save";
+			for (var j=0;j<this.height;j++)
+				for (var i=0;i<this.width;i++) {
+					var tileName = json.tiles[json.field[j][i] & 0xff];
+					var tile = conf.tileByName[tileName];
+					var v = 0;
+					if (!tile)
+						v = conf.defaultTile.id;
+					else
+						v = tile.id;
+							
+					if (json.surface) {
+						tileName = json.surface[(json.field[j][i] >> 8) &0xff];
+						var tile = conf.tileByName[tileName];
+						if (!tile)
+							v |= conf.defaultSurface.id << 8;
+						else
+							v |= tile.id << 8;
+					}
+					if (this.chunks) 
+						this.set(i, j, v);
+					else 
+						this.field[j][i] = v;
+				}
+			this.modified = false;
+		},
 		init: function() {
 			if (this.width%CHUNK_SIZE!=0 || this.height%CHUNK_SIZE !=0) {
 				throw "map size must be divisible by "+CHUNK_SIZE;
@@ -197,6 +211,7 @@
 		this.map = map;
 		this.conf = conf;
 		this.obj = createTwoDimArray(map.width, map.height, null);
+		this.editor = new Editor(this);
 	}
 	
 	Game.prototype = {
@@ -209,12 +224,17 @@
 			this.obj[y][x] = null;
 		},
 		asJSON: function() {
-			var res = {tiles:[], surface: [], field: this.map.field};
+			var res = {tiles:[], surface: [], field: this.map.field, revision:this.map.revision};
 			for (var i=0;i<this.conf.tiles.length;i++)
 				res.tiles.push(this.conf.tiles[i].name);
 			for (var i=0;i<this.conf.surface.length;i++)
 				res.surface.push(this.conf.surface[i].name);
 			return res;
+		},
+		clearEntities: function() {
+			for (var i=0;i<this.obj.length;i++)
+				for (var j=0;j<this.obj.length;j++)
+					this.obj[j][i] = null;
 		},
 		randomize: function(entities) {
 			var map = this.map;

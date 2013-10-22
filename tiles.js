@@ -1,5 +1,7 @@
 app.addModule({beforeStart:function(app) {
 
+app.style = "grassfield"
+
 app.addAssets({
 	name: "tileset",
 	url: "img/tileset.png",
