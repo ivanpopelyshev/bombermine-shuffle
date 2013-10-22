@@ -79,6 +79,7 @@ app.addModule({afterStart: function (app) {
 			editor.selectAt(renderer.point(x, y), 2);
 		}
 		renderer.renderAll();
+		renderer.roundCam();
 	});
 	var keyUp = false, keyDown = false, keyLeft = false, keyRight = false, 
 		keySpace = false, keyEnter = false, redraw = false;
