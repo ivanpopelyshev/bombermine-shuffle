@@ -15,6 +15,9 @@
 		this.testSurf = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 	}
 	
+    var xX = [1, 1, 0, -1, -1, -1, 0, 1];
+    var xY = [ 0, 1, 1, 1, 0, -1, -1, -1];	
+	
 	Renderer.prototype = {
 		canvas: null,
 		game: null,
@@ -112,15 +115,14 @@
 				high = (tile.level == 2 && D.level == 2 && tile.ceilingImg2 != -1) ? tile.ceilingImg2 : tile.ceilingImg;
 			var shadow = 0;
 			if (tile.level != 2) {
-				var L = conf.tiles[buf[line2-1]&0xff];
-				var DL = conf.tiles[buf[line3-1]&0xff];
-				if (DL.level == 2) {
-					if (L.level == 2) 
-						shadow = 1;
-					else shadow = 2;
-				} else if (L.level == 2) {
-					shadow = 3;
-				}
+				if (conf.tiles[buf[line2+1]&0xff].level == 2) shadow |= 1;
+				if (conf.tiles[buf[line3+1]&0xff].level == 2) shadow |= 1<<1;
+				if (conf.tiles[buf[line3]&0xff].level == 2) shadow |= 1<<2;
+				if (conf.tiles[buf[line3-1]&0xff].level == 2) shadow |= 1<<3;
+				if (conf.tiles[buf[line2-1]&0xff].level == 2) shadow |= 1<<4;
+				if (conf.tiles[buf[line1-1]&0xff].level == 2) shadow |= 1<<5;
+				if (conf.tiles[buf[line1]&0xff].level == 2) shadow |= 1<<6;
+				if (conf.tiles[buf[line1+1]&0xff].level == 2) shadow |= 1<<7;
 			}
 			return (low&0xff) + ((mid&0xff)<<8) + ((high&0xff)<<16) + ((shadow&0xff)<<24);
 		},		
@@ -180,9 +182,9 @@
 					var shadow = (chunk.visual[k++]>>24)&0xff;
 					if (shadow>0) {
 					    var x = i * TILE, y1 = j * TILE, y2 = (j + 1) * TILE, t = SHADOW;
-						if (shadow == 1) {
+						if ((shadow&24) == 24) {
 							context.rect(x, y1, t, TILE);
-						} else if (shadow == 3) {
+						} else if ((shadow&24) == 16) {
 							context.moveTo(x + t, y1);
 							context.lineTo(x, y1);
 							context.lineTo(x, y2);
@@ -192,6 +194,36 @@
 					}
 				}
             context.fill();
+			context.beginPath();
+			context.strokeStyle="black";
+			context.globalAlpha = 0.4;
+			context.lineWidth = 1;
+			//shadow2
+			k = 0;
+			for (var j=0;j<CHUNK_SIZE;j++)
+				for (var i=0;i<CHUNK_SIZE;i++) {
+					var shadow = (chunk.visual[k++]>>24)&0xff;
+					if (shadow>0) {
+						var x1 = i * TILE, x2 = (i+1)*TILE, y1 = j * TILE, y2 = (j + 1) * TILE;
+						if ((shadow&1)!=0) {
+							context.moveTo(x2-0.5, y1);
+							context.lineTo(x2-0.5, y2);
+						}
+						if ((shadow&4)!=0) {
+							context.moveTo(x1, y2-0.5);
+							context.lineTo(x2, y2-0.5);
+						}
+						if ((shadow&16)!=0) {
+							context.moveTo(x1+0.5, y1);
+							context.lineTo(x1+0.5, y2);
+						}
+						if ((shadow&64)!=0) {
+							context.moveTo(x1, y1+0.5);
+							context.lineTo(x2, y1+0.5);
+						}
+					}
+				}
+            context.stroke();
             context.globalAlpha = 1.0;
 		},
 		renderAll: function() {

@@ -26,7 +26,7 @@ app.addAssets({
 		["box1", "box_with_bombs", "goal", "wc"],
 		["gate_closed", "tunnel", "gate_opened"],
 		["tube1", "tube2", "tube3", "tube4", "spike_off", "spike_on", "jumppad_off", "jumppad_on"],
-		["flag_blue", "flag_red", "flag_yellow", "flag_purple"]]
+		["flag_white", "flag_red", "flag_blue", "flag_yellow", "flag_purple"]]
 });
 
 var conf = app.conf, 
@@ -275,6 +275,29 @@ newGroup("bridge_toggle", {
         sub("bridge_off", {type: "abyss"}),
         sub("bridge_on", {type: "floor"})
     ]
+})
+
+newGroup("flag", {
+	type: "building",
+	subTiles: [
+		sub("flag_white"),
+		sub("flag_red"),
+		sub("flag_blue"),
+		sub("flag_yellow"),
+		sub("flag_purple")
+	]
+})
+
+newGroup("tubes", {
+	type: "box",
+	surface: "tile",
+	deep: "deep_bridge",
+	subTiles: [
+		sub("tube1"),
+		sub("tube2"),
+		sub("tube3"),
+		sub("tube4")
+	]
 })
 	
 conf.link();
