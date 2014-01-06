@@ -131,7 +131,7 @@ app.addModule({afterStart: function (app) {
 			redraw = true;
 		}
 		game.obj[p.dy >> TILE_BITS][p.dx >> TILE_BITS] = p;
-		if (redraw) renderer.renderAll();
+		renderer.renderAll();
 	},tick);
 	$(document).keydown(function(event){
 		switch (event.which) {
