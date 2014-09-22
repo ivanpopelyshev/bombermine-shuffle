@@ -1,7 +1,7 @@
 app.addModule({beforeStart:function(app) {
 	app.addAssets([{
 		name: "player",
-		density: 48,
+		density: 96,
 		url: "img/dis2_spider.png",
 		frameWidth: 56,
 		frameHeight: 54,
@@ -13,7 +13,21 @@ app.addModule({beforeStart:function(app) {
 		animMirrorLeft: true,
 		speed: 4,
 		row: [0, 1, 2, 1]
-	},		
+	},
+	{
+		name: "pony",
+		density: 96,
+		url: "img/pony.png",
+		frameWidth: 55,
+		frameHeight: 54,
+		renderWidth: 45,
+		animStand: 1,
+		framesX: 6,
+		framesY: 4,
+		animSpeed: 1800,
+		speed: 4,
+		row: [0, 1, 2, 3]
+	},	
 	{
 		name: "player",
 		// one sprite per 48 tiles

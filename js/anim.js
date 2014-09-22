@@ -123,9 +123,7 @@ app.addModule({afterStart: function (app) {
 			redraw = false;
 		} else {
 			var oldsx = p.sx;
-			p.sx = (p.step * p.type.framesX | 0) % p.type.framesX;
-			if(p.type.animStand && p.sx!==oldsx && oldsx>0)
-				p.sx++;
+			p.sx = (p.step * p.type.framesX | 0) % p.type.framesX + (p.type.animStand ? 1 : 0);
 			if(keyEnter && p.sx==0 && oldsx!==0)
 				keyEnter = false;
 			redraw = true;
